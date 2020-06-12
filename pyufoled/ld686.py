@@ -1,4 +1,5 @@
 import socket
+import colorsys
 from .protocol import send_data, ProtocolType, scan
 from .bytecodes import *
 from typing import List
@@ -74,6 +75,21 @@ class LD686:
     def program_speed(self, value: int) -> int:
         self._program_speed = value
         self._push_program()
+
+# ====== Facade Properties
+
+    @property
+    def hsv(self) -> List[float]:
+        rgb = [v/255 for v in self.rgb]
+
+        return colorsys.rgb_to_hsv(*rgb)
+    
+    @hsv.setter
+    def hsv(self, value: List[float]):
+        rgb = colorsys.hsv_to_rgb(*value)
+        rgb = [int(v * 255) for v in rgb]
+        self.rgb = rgb
+
 
 # ====== Raw Access
 
