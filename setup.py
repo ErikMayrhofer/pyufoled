@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='pyufoled',
-    version='0.0.1',
+    version='0.0.2',
     author='Erik Mayrhofer',
     author_email='obyoxar+pypi@gmail.com',
     url='https://github.com/ErikMayrhofer/pyufoled',
