@@ -9,7 +9,7 @@ class ProtocolType(enum.Enum):
     LD382A = 2,
     LD382 = 3
 
-def send_data(data_bytes: bytes, protocol_type: ProtocolType, sock: socket.socket):
+def send_data(data_bytes: bytes, protocol_type: ProtocolType, sock: socket.socket, timeout = 0.01):
     if protocol_type == ProtocolType.LD382A or protocol_type == ProtocolType.LD686:
         data_bytes = bytes([*data_bytes, BYTE_LD686_EXTRA_MYSTERY])
 
@@ -20,20 +20,20 @@ def send_data(data_bytes: bytes, protocol_type: ProtocolType, sock: socket.socke
 
     total_bytes = bytes([*data_bytes, checksum])
 
-    print(f"Send: {total_bytes.hex()}")
     sock.sendall(total_bytes)
 
-    sock.settimeout(1)
-    response = []
-    while True:
-        try:
-            r = sock.recv(1)
-            response.append(r[0])
-            print(r.hex())
-        except socket.timeout:
-            break
-
-    return response
+    if timeout > 0:
+        sock.settimeout(timeout)
+        response = []
+        while True:
+            try:
+                r = sock.recv(1)
+                response.append(r[0])
+                print(r.hex())
+            except socket.timeout:
+                break
+        return response
+    return None
 
 
 def scan(seconds: int) -> dict:
