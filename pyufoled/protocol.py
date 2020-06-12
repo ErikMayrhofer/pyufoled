@@ -33,9 +33,6 @@ def send_data(data_bytes: bytes, protocol_type: ProtocolType, sock: socket.socke
         except socket.timeout:
             break
 
-    # response = socket.recv(len(total_bytes))
-
-
     return response
 
 
