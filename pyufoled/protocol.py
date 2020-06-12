@@ -20,7 +20,6 @@ def send_data(data_bytes: bytes, protocol_type: ProtocolType, sock: socket.socke
 
     total_bytes = bytes([*data_bytes, checksum])
 
-    print(f"Send: {total_bytes.hex()}")
     sock.sendall(total_bytes)
 
     sock.settimeout(1)
