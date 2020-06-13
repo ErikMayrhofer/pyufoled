@@ -9,17 +9,15 @@ class ProtocolType(enum.Enum):
     LD382A = 2,
     LD382 = 3
 
-def send_data(data_bytes: bytes, protocol_type: ProtocolType, sock: socket.socket, timeout = 0.01):
+def send_data(data_bytes: bytes, protocol_type: ProtocolType, sock: socket.socket, timeout = 0.1):
     if protocol_type == ProtocolType.LD382A or protocol_type == ProtocolType.LD686:
-        data_bytes = bytes([*data_bytes, BYTE_LD686_EXTRA_MYSTERY])
+        data_bytes = bytes([*data_bytes, 0x0F])
 
-    checksum = 0
-    for byte in data_bytes:
-        checksum += byte
-    checksum = checksum & 0xFF
+    checksum = checksum_for(data_bytes)
 
     total_bytes = bytes([*data_bytes, checksum])
 
+    print(f"Send: '{data_bytes.hex()}' CS:{hex(checksum)}")
     sock.sendall(total_bytes)
 
     if timeout > 0:
@@ -29,11 +27,25 @@ def send_data(data_bytes: bytes, protocol_type: ProtocolType, sock: socket.socke
             try:
                 r = sock.recv(1)
                 response.append(r[0])
-                print(r.hex())
             except socket.timeout:
                 break
-        return response
+        response = bytes(response)
+        response_data = response[:-1]
+        expected_checksum = checksum_for(response_data)
+        actual_checksum = response[-1]
+        print(f" -> Receive: '{response_data.hex()}' CS:{hex(actual_checksum)}")
+        if actual_checksum != expected_checksum:
+            raise RuntimeWarning(f"Received invalid checksum: {actual_checksum}!={expected_checksum}")
+        return response_data
     return None
+
+
+def checksum_for(data_bytes: bytes):
+    checksum = 0
+    for byte in data_bytes:
+        checksum += byte
+    checksum = checksum & 0xFF
+    return checksum
 
 
 def scan(seconds: int) -> dict:

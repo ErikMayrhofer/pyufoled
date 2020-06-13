@@ -13,7 +13,6 @@ class LD686:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, LD686_PORT))
 
-        self._on = False
         self._white = 0
         self._white2 = 0
         self._rgb = (0, 0, 0)
@@ -22,7 +21,7 @@ class LD686:
 
     @property
     def on(self) -> bool:
-        return self._on
+        return self._query_power()
 
     @property
     def rgb(self) -> List[int]:
@@ -48,8 +47,7 @@ class LD686:
 
     @on.setter
     def on(self, value: bool) -> None:
-        self._on = value
-        self._push_power()
+        self._push_power(value)
 
     @rgb.setter
     def rgb(self, value: int) -> None:
@@ -104,11 +102,25 @@ class LD686:
     def _push_program(self):
         self._send(BYTE_MSGTYPE_PROGRAM, self._program, self._program_speed)
 
-    def _push_power(self):
-        self._send(BYTE_MSGTYPE_POWER, BYTE_POWER_ON if self._on else BYTE_POWER_OFF)
+    def _push_power(self, on):
+        self._send(BYTE_MSGTYPE_POWER, BYTE_POWER_ON if on else BYTE_POWER_OFF)
 
-    def _send(self, *args):
-        send_data(bytes(args), ProtocolType.LD686, self.sock)
+    def _send(self, *args, timeout = 0.5):
+        return send_data(bytes(args), ProtocolType.LD686, self.sock, timeout)
+
+# ======= Query State
+
+    def _query_power(self):
+        result = self._send(BYTE_MSGTYPE_POWER, timeout=1)
+        if len(result) != 3:
+            raise RuntimeWarning(f"Received invalid or unsupported power information: {result.hex()}")
+
+        if result[2] == BYTE_POWER_ON:
+            return True
+        elif result[2] == BYTE_POWER_OFF:
+            return False
+        else:
+            raise RuntimeWarning(f"Received invalid or unsupported power information: {result.hex()}")
 
     @staticmethod
     def scan(seconds: int) -> dict:
